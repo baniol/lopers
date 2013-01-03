@@ -1,4 +1,4 @@
-//     Lopers.js 0.1
+//     Lopers.js 0.0.2
 //     (c) 2012 Marcin Baniowski, baniowski.pl
 //     Lopers may be freely distributed under the MIT license.
 //     For all details and documentation:
@@ -6,14 +6,19 @@
 var Lopers = function(dbName){
 	var self = this;
 
-	this.version = '0.1';
-	this.built = "20121111";
+	// @todo move constructor to init method (or construct ?)
+	this.version = '0.0.2';
+	this.built = "20130103";
 	this.debug = true;
+
+	if(dbName === undefined || dbName === ''){
+		throw new Error('db name not defined or empty string');
+	}
 
 	// common namespace
 	this._dbName = dbName;
 
-	// array with objects width each table structure (fields)
+	// array with objects with each table structure (fields)
 	this._tables = [];
 
 	// object containing data tables
@@ -24,36 +29,55 @@ var Lopers = function(dbName){
 		this._db = localStorage.setItem(self._dbName,JSON.stringify([]));
 		this._db = [];
 	}else{
-		this._db = JSON.parse(i);
+		try{
+			this._db = JSON.parse(i);
+		}
+		catch(e){
+			throw new Error('String from localStorage is not in valid JSON format');
+		}
 	}
 
 	// initialize table - name and data structure
 	this.setTable = function(tableName,fields){
-		if(tableName === undefined){
-			this._error('Undefined table name');
-		}
-		if(fields === undefined){
-			this._error('Undefined fields argument');
+		var $this = this;
+		if(typeof tableName !== 'string'){
+			throw new Error('Table name must be a string!');
 		}
 		if(fields instanceof Array == false){
-			this._error('Fields argument must an array');
+			throw new Error('Fields argument must be an array!');
+		}
+		if(fields.length == 0){
+			throw new Error('Fields argument must not be an empty array!');
 		}
 		// table structure
 		var tableStr = {table:tableName,fields:fields};
 		this._tables.push(tableStr);
 
 		// check if tableName exists - prevents table doubling
-		var c = this.getTableData(tableName);
-		if(c !== undefined)
-			return false;
-		// add client ID
-		fields.push('cid');
-		this._db.push({table:tableName,records:[]});
-		this.persistTable();
+		this.checkTableName(tableName,function(){
+			// add client ID
+			fields.push('cid');
+			$this._db.push({table:tableName,records:[]});
+			$this.persistTable();
+		});
+	};
+
+	// checks for table name availability - if already exists returns false: @todo - decribe more
+	this.checkTableName = function(tableName,fn){
+		for(var i in this._db){
+			if(this._db[i].table == tableName){
+				return false;
+				// throw new Error('Table name must be unique!');
+			}
+		}
+		if(typeof fn === 'function'){
+			fn();
+		}
 	};
 
 	// Returns table data
-	this.getTableData = function(table){
+	this._getTableData = function(table){
+		// @todo check if table exists
 		var out;
 		for(var i in this._db){
 			if(this._db[i].table == table){
@@ -61,7 +85,7 @@ var Lopers = function(dbName){
 			}
 		}
 		if(out === undefined){
-			this._error('Table '+ table +' not found!');
+			throw new Error('Table '+ table +' not found!');
 		}
 		return out;
 	};
@@ -81,7 +105,7 @@ var Lopers = function(dbName){
 	};
 	
 	// Creates new record 
-	this.insertRecord = function(table,arr,callback){
+	this.insertRecord = function(table,arr,fn){
 		// check arguments
 		if(table === undefined){
 			this._error('Undefined table name');
@@ -103,27 +127,22 @@ var Lopers = function(dbName){
 		el['cid'] = this.getFreeCid(table);
 
 		// insert new record
-		this._pushRecord(el,table);
-
-		// exec callback if defined
-		if(typeof callback == 'function'){
-			callback.call(this);
-		}
+		this._pushRecord(el,table,fn);
 	};
 
 	// Inserts a new record
-	this._pushRecord = function(el,table){
+	this._pushRecord = function(el,table,fn){
 		for(var i in this._db){
 			if(this._db[i].table == table){
 				this._db[i].records.push(el);
 			}
 		}
 		// save to localStorage
-		this.persistTable();
+		this.persistTable(fn);
 	};
 	
 	// revrites record with new values
-	this.editRecord = function(table,arr,key,callback){
+	this.editRecord = function(table,arr,key,fn){
 		arr.push(key);
 		var el = this.getItemByCid(table,key);
 		var fields = this.getTableFields(table);
@@ -131,41 +150,38 @@ var Lopers = function(dbName){
 			el[fields[i]] = arr[i];
 		}
 		var index = this.getIndexByCid(table,key);
-		var td = this.getTableData(table);
+		var td = this._getTableData(table);
 		td[index] = el;
-		this.persistTable();
-		if(typeof callback == 'function'){
-			callback.call(this);
-		}
+		this.persistTable(fn);
 	};
 	
 	// Updates specific field
-	this.updateField = function(table,whereField,whereValue,targetField,newValue){
+	this.updateField = function(table,whereField,whereValue,targetField,newValue,fn){
 		var record = this.getRecords(table,whereField,whereValue);
 		for(var i in record){
 			var cid = record[i]['cid'];
 			var index = self.getIndexByCid(table,cid);
-			var td = this.getTableData(table);
+			var td = this._getTableData(table);
 			td[index][targetField]= newValue;
 		}
-		this.persistTable();
+		this.persistTable(fn);
 	};
 
 	// deletes related records by key
-	this.deleteRelated = function(table,whereField,whereValue){
+	this.deleteRelated = function(table,whereField,whereValue,fn){
 		var rec = this.getRecords(table,whereField,whereValue);
 		for(var i in rec){
 			var cid = rec[i]['cid'];
 			var index = self.getIndexByCid(table,cid);
-			var td = this.getTableData(table);
+			var td = this._getTableData(table);
 			td.splice(index,1);
-			this.persistTable();
+			this.persistTable(fn);
 		}
 	};
 	
 	// Returns first free cid for a new record
 	this.getFreeCid = function(table){
-		var tableData = this.getTableData(table);
+		var tableData = this._getTableData(table);
 		var arr = [];
 		for(var i in tableData){
 			arr.push(tableData[i]['cid']);
@@ -177,7 +193,7 @@ var Lopers = function(dbName){
 	};
 	
 	this.getIndexByCid = function(table,cid){
-		var td = this.getTableData(table);
+		var td = this._getTableData(table);
 		var out;
 		for(var i in td){
 			if(td[i]['cid'] == cid)
@@ -186,17 +202,11 @@ var Lopers = function(dbName){
 		return out;
 	};
 	
-	this.persistTable = function(){
+	this.persistTable = function(fn){
 		localStorage.removeItem(self._dbName);
 		localStorage.setItem(self._dbName,JSON.stringify(self._db));
-	};
-	
-	/**
-	 * Returns record by its client id
-	 * @deprecated
-	 */
-	this.getItemByCid = function(table,cid){
-		return this.getRecords(table,'cid',cid)[0];
+		if(typeof fn === 'function')
+			fn();
 	};
 	
 	/**
@@ -204,7 +214,7 @@ var Lopers = function(dbName){
 	 */
 	this.getIdByCid = function(table,cid){
 		var out = null;
-		var td = this.getTableData(table);
+		var td = this._getTableData(table);
 		for(var i in td){
 			if(td[i]['cid'] == cid)
 				out = i;
@@ -214,6 +224,22 @@ var Lopers = function(dbName){
 		}else{
 			this._error('object doesn`t exist');
 		}
+	};
+
+	/**
+	 * Gets first field value
+	 * @todo - throw exception if field || value undefined
+	 */
+	this.getOne = function(table,field,value){
+		var tableData = this._getTableData(table);
+		var out = false;
+		for(var i in tableData){
+			if(field !== undefined && value !== undefined){ // @todo exception instead
+				if(tableData[i][field] == value)
+					out = tableData[i];
+			}
+		}
+		return out;
 	};
 	
 	/**
@@ -225,7 +251,7 @@ var Lopers = function(dbName){
 		if(table === undefined){
 			// @todo throw error - no table name
 		}
-		var tableData = this.getTableData(table);
+		var tableData = this._getTableData(table);
 		var out = [];
 		for(var i in tableData){
 			if(field !== undefined && value !== undefined){
@@ -243,7 +269,7 @@ var Lopers = function(dbName){
 	 */
 	this.getValues = function(table,key){
 		var out = [];
-		var td = this.getTableData(table);
+		var td = this._getTableData(table);
 		for(var i in td){
 			var obj = {};
 			obj.value = td[i][key];
@@ -256,12 +282,12 @@ var Lopers = function(dbName){
 	/**
 	 * Removes a record
 	 */
-	this.deleteRecord = function(table,cid,callback){
+	this.deleteRecord = function(table,cid,fn){
 		var index = this.getIdByCid(table,cid);
-		var td = this.getTableData(table);
+		var td = this._getTableData(table);
 		td.splice(index,1);
 		this.persistTable();
-		if(typeof callback == 'function'){
+		if(typeof fn == 'function'){
 			callback.call(this);
 		}
 	};
@@ -280,7 +306,7 @@ var Lopers = function(dbName){
 	 * @todo - unused for the moment
 	 */
 	this.countRecords = function(table){
-		var td = this.getTableData(table);
+		var td = this._getTableData(table);
 		var c = 0;
 		for(var i in td){
 			c++;
