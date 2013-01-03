@@ -54,7 +54,7 @@ var Lopers = function(dbName){
 		this._tables.push(tableStr);
 
 		// check if tableName exists - prevents table doubling
-		this.checkTableName(tableName,function(){
+		this._checkTableName(tableName,function(){
 			// add client ID
 			fields.push('cid');
 			$this._db.push({table:tableName,records:[]});
@@ -63,7 +63,7 @@ var Lopers = function(dbName){
 	};
 
 	// checks for table name availability - if already exists returns false: @todo - decribe more
-	this.checkTableName = function(tableName,fn){
+	this._checkTableName = function(tableName,fn){
 		for(var i in this._db){
 			if(this._db[i].table == tableName){
 				return false;
@@ -91,7 +91,7 @@ var Lopers = function(dbName){
 	};
 
 	// Gets table fields (structure)
-	this.getTableFields = function(table){
+	this._getTableFields = function(table){
 		var out;
 		for(var i in this._tables){
 			if(this._tables[i].table == table){
@@ -105,7 +105,7 @@ var Lopers = function(dbName){
 	};
 	
 	// Creates new record 
-	this.insertRecord = function(table,arr,fn){
+	this.insert = function(table,arr,fn){
 		// check arguments
 		if(table === undefined){
 			this._error('Undefined table name');
@@ -118,7 +118,7 @@ var Lopers = function(dbName){
 		var el = {};
 
 		// get table structure - fields names
-		var fields = this.getTableFields(table);
+		var fields = this._getTableFields(table);
 		for(var i in fields){
 			el[fields[i]] = arr[i];
 		}
@@ -127,11 +127,6 @@ var Lopers = function(dbName){
 		el['cid'] = this.getFreeCid(table);
 
 		// insert new record
-		this._pushRecord(el,table,fn);
-	};
-
-	// Inserts a new record
-	this._pushRecord = function(el,table,fn){
 		for(var i in this._db){
 			if(this._db[i].table == table){
 				this._db[i].records.push(el);
@@ -140,12 +135,12 @@ var Lopers = function(dbName){
 		// save to localStorage
 		this.persistTable(fn);
 	};
-	
+
 	// revrites record with new values
 	this.editRecord = function(table,arr,key,fn){
 		arr.push(key);
 		var el = this.getItemByCid(table,key);
-		var fields = this.getTableFields(table);
+		var fields = this._getTableFields(table);
 		for(var i=0;i<=arr.length;i++){
 			el[fields[i]] = arr[i];
 		}
@@ -245,6 +240,7 @@ var Lopers = function(dbName){
 	/**
 	 * Gets all records from a table
 	 * @todo - in case of 1 element return not array (otherwise [0] needed)
+	 * @todo - rename to getSet ?
 	 */
 	this.getRecords = function(table,field,value){
 		// get called table
