@@ -28,20 +28,32 @@ $(document).ready(function(){
 	// debug function for displaying stored data
 	function displayCategoryTree(){
 		var categories = db.getRecords('categories');
-		var html = '<div>';
+		var html = '<div id="tree">';
 		for(var i=0;i<categories.length;i++){
-			html += '<ul>'
 			var c = categories[i];
-			html += c.name;
+			html += '<ul data-cid="'+c.cid+'">'
+			html += '<div class="cat-name">'+c.name+'</div>';
 			var todos = db.getRecords('todos','category',c.cid);
 			for(var j=0;j<todos.length;j++){
 				var t = todos[j];
-				html += '<li>'+t.name+'</li>';
+				html += '<li data-cid="'+t.cid+'"><span class="name">'+t.name+'</span><span class="edit">edit</span><span class="remove">remove</span></li>';
 			}
 			html += '</ul>';
 		}
 		html += '</div>';
 		$('#output').html(html);
+		bindEvents();
+	}
+
+	// bind events for tree data manipulation
+	function bindEvents(){
+		$(document).on('click','#tree ul li .remove',function(){
+			var li = $(this).closest('li');
+			var cid = li.data('cid');
+			if(db.delete('todos',{cid:cid})){
+				li.remove();
+			}
+		});
 	}
 
 	// display output debug

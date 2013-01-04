@@ -1,0 +1,24 @@
+#tree{
+
+}
+
+#tree ul{
+	list-style: none;
+}
+
+#tree ul .cat-name{
+	text-decoration: underline;
+}
+
+#tree ul li{
+	padding-left:10px;
+}
+
+#tree ul li .remove,#tree ul li .edit, #tree ul li .name{
+	display: inline-block;
+	margin-left:8px
+}
+
+#tree ul li .remove,#tree ul li .edit{
+	cursor: pointer;
+}

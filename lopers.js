@@ -1,4 +1,4 @@
-//     Lopers.js 0.0.2
+//     Lopers.js 0.0.3
 //     (c) 2012 Marcin Baniowski, baniowski.pl
 //     Lopers may be freely distributed under the MIT license.
 //     For all details and documentation:
@@ -7,8 +7,8 @@ var Lopers = function(dbName){
 	var self = this;
 
 	// @todo move constructor to init method (or construct ?)
-	this.version = '0.0.2';
-	this.built = "20130103";
+	this.version = '0.0.3';
+	this.built = "20130104";
 	this.debug = true;
 
 	if(dbName === undefined || dbName === ''){
@@ -19,10 +19,13 @@ var Lopers = function(dbName){
 	this._dbName = dbName;
 
 	// array with objects with each table structure (fields)
-	this._tables = [];
+	this._schemas = [];
 
 	// object containing data tables
 	this._db;
+
+	// cid counter
+	this._count = 1;
 
 	var i = localStorage.getItem(self._dbName);
 	if(i === null){
@@ -51,7 +54,7 @@ var Lopers = function(dbName){
 		}
 		// table structure
 		var tableStr = {table:tableName,fields:fields};
-		this._tables.push(tableStr);
+		this._schemas.push(tableStr);
 
 		// check if tableName exists - prevents table doubling
 		this._checkTableName(tableName,function(){
@@ -91,11 +94,11 @@ var Lopers = function(dbName){
 	};
 
 	// Gets table fields (structure)
-	this._getTableFields = function(table){
+	this._getTableSchema = function(table){
 		var out;
-		for(var i in this._tables){
-			if(this._tables[i].table == table){
-				out = this._tables[i].fields;
+		for(var i in this._schemas){
+			if(this._schemas[i].table == table){
+				out = this._schemas[i].fields;
 			}
 		}
 		if(out === undefined){
@@ -118,13 +121,22 @@ var Lopers = function(dbName){
 		var el = {};
 
 		// get table structure - fields names
-		var fields = this._getTableFields(table);
+		var fields = this._getTableSchema(table);
+
+		// check arr length against table schema
+		if(arr.length !== fields.length)
+			throw new Error('The number of values you trying to insert does not correspod the schema from setTable!');
+
 		for(var i in fields){
 			el[fields[i]] = arr[i];
 		}
 
 		// get first avaliable cid number
-		el['cid'] = this.getFreeCid(table);
+		// el['cid'] = this.getFreeCid(table);
+
+		// add cid
+		el['cid'] = this._count;
+		this._count++;
 
 		// insert new record
 		for(var i in this._db){
@@ -140,7 +152,7 @@ var Lopers = function(dbName){
 	this.editRecord = function(table,arr,key,fn){
 		arr.push(key);
 		var el = this.getItemByCid(table,key);
-		var fields = this._getTableFields(table);
+		var fields = this._getTableSchema(table);
 		for(var i=0;i<=arr.length;i++){
 			el[fields[i]] = arr[i];
 		}
@@ -148,6 +160,10 @@ var Lopers = function(dbName){
 		var td = this._getTableData(table);
 		td[index] = el;
 		this.persistTable(fn);
+	};
+
+	this.update = function(table){
+
 	};
 	
 	// Updates specific field
@@ -160,6 +176,37 @@ var Lopers = function(dbName){
 			td[index][targetField]= newValue;
 		}
 		this.persistTable(fn);
+	};
+
+	// delete a record
+	this.delete = function(table,cond){
+		var found = this._pickRecords(table,cond);
+		// @todo 2nd time called getTableData - maybe to temp cache ? - really necessary?
+		var td = this._getTableData(table);
+		for(var i in found){
+			td.splice(found[i],1);
+		}
+		this.persistTable();
+		return true;
+	};
+
+	// returns indexes of picked record by condition
+	// @todo - implements multiple condigions (AND)
+	this._pickRecords = function(table,cond){
+		var data = this._getTableData(table);
+		var picked = [];
+		for(var i=0;i<data.length;i++){
+			var el = data[i];
+			for(var j in cond){
+				var key = j;
+				var value = cond[j];
+				if(el[key] == value){
+					var index = this._getIndexByCid(table,el.cid);
+					picked.push(index);
+				}
+			}
+		}
+		return picked;
 	};
 
 	// deletes related records by key
@@ -207,7 +254,7 @@ var Lopers = function(dbName){
 	/**
 	 * Returns collection key by client id
 	 */
-	this.getIdByCid = function(table,cid){
+	this._getIndexByCid = function(table,cid){
 		var out = null;
 		var td = this._getTableData(table);
 		for(var i in td){
@@ -263,7 +310,7 @@ var Lopers = function(dbName){
 	/**
 	 * gets all values by the given key
 	 */
-	this.getValues = function(table,key){
+	this._getValues = function(table,key){
 		var out = [];
 		var td = this._getTableData(table);
 		for(var i in td){
@@ -279,12 +326,12 @@ var Lopers = function(dbName){
 	 * Removes a record
 	 */
 	this.deleteRecord = function(table,cid,fn){
-		var index = this.getIdByCid(table,cid);
+		var index = this._getIndexByCid(table,cid);
 		var td = this._getTableData(table);
 		td.splice(index,1);
 		this.persistTable();
 		if(typeof fn == 'function'){
-			callback.call(this);
+			fn();
 		}
 	};
 	
@@ -310,14 +357,4 @@ var Lopers = function(dbName){
 		return c;
 	};
 
-	/**
-	 * Custom error handler
-	 */
-	this._error = function(msg){
-		if(self.debug){
-			// var m = "Lopers error: " + msg
-			// console.log(m);
-			throw new Error(msg);
-		}
-	};
 }
