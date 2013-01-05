@@ -16,7 +16,7 @@ $(document).ready(function(){
 			var catName = 'sample category '+catArray[c];
 			db.insert('categories',[catName],function(){
 			  	// insert some todos
-			  	var cid = parseInt(c)+1;
+			  	var cid = c == 0 ? 1 : 6;
 			  	for(var i=1;i<5;i++){
 			  		db.insert('todos',[cid,'todo_'+i]);
 			  	}

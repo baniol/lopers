@@ -124,7 +124,7 @@ var Lopers = function(dbName){
 		var fields = this._getTableSchema(table);
 
 		// check arr length against table schema
-		if(arr.length !== fields.length)
+		if(arr.length + 1 !== fields.length)
 			throw new Error('The number of values you trying to insert does not correspod the schema from setTable!');
 
 		for(var i in fields){
