@@ -25,7 +25,14 @@ var Lopers = function(dbName){
 	this._db;
 
 	// cid counter
-	this._count = 1;
+	// this._count = 1;
+
+	if(localStorage.getItem('lopers_cid_count') === undefined){
+		this._lastCid = 0;
+		localStorage.setItem('lopers_cid_count',this._lastCid);
+	}else{
+		this._lastCid = localStorage.getItem('lopers_cid_count');
+	}
 
 	var i = localStorage.getItem(self._dbName);
 	if(i === null){
@@ -123,24 +130,25 @@ var Lopers = function(dbName){
 		// get table structure - fields names
 		var fields = this._getTableSchema(table);
 
-		console.log(arr.length);
-
-		// check arr length against table schema
-		var schemaLength = fields.length - 1;
-		console.log(schemaLength);
-		if(arr.length != fields.length)
+		// console.log(arr);
+		// console.log(fields);
+		var fieldsLength = fields.length;
+		if(fields['cid'] !== undefined){
+			fieldsLength++;
+		}
+		if(arr.length !== fieldsLength)
 			throw new Error('The number of values you trying to insert does not correspod the schema from setTable!');
 
 		for(var i in fields){
 			el[fields[i]] = arr[i];
 		}
 
+		// console.log(this._count);
+
+		el['cid'] = this._getFirstCid();
+
 		// get first avaliable cid number
 		// el['cid'] = this.getFreeCid(table);
-
-		// add cid
-		el['cid'] = this._count;
-		this._count++;
 
 		// insert new record
 		for(var i in this._db){
@@ -151,6 +159,14 @@ var Lopers = function(dbName){
 		// save to localStorage
 		this.persistTable(fn);
 	};
+
+	this._getFirstCid = function(){
+		var newCid = this._lastCid + 1;
+		localStorage.setItem('lopers_cid_count',newCid);
+		return newCid;
+	};
+
+
 
 	// updates a record
 	// @todo - implement multiple conditions

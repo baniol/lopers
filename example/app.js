@@ -23,12 +23,11 @@ $(document).ready(function(){
 			});
 		}
 	}
-	displayCategoryTree();
+	displayCategoryTree(true);
 
 	// debug function for displaying stored data
-	function displayCategoryTree(){
+	function displayCategoryTree(start){
 		var categories = db.getRecords('categories');
-		console.log(categories);
 		var html = '<div id="tree">';
 		for(var i=0;i<categories.length;i++){
 			var c = categories[i];
@@ -43,7 +42,8 @@ $(document).ready(function(){
 		}
 		html += '</div>';
 		$('#output').html(html);
-		bindEvents();
+		if(start)
+			bindEvents();
 	}
 
 	// bind events for tree data manipulation
@@ -55,6 +55,7 @@ $(document).ready(function(){
 			var catName = $.trim(input.val());
 			input.val('');
 			db.insert('categories',[catName]);
+			displayCategoryTree();
 		});
 
 		$(document).on('click','#tree ul li .remove',function(){
