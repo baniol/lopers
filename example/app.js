@@ -28,6 +28,7 @@ $(document).ready(function(){
 	// debug function for displaying stored data
 	function displayCategoryTree(){
 		var categories = db.getRecords('categories');
+		console.log(categories);
 		var html = '<div id="tree">';
 		for(var i=0;i<categories.length;i++){
 			var c = categories[i];
@@ -47,6 +48,15 @@ $(document).ready(function(){
 
 	// bind events for tree data manipulation
 	function bindEvents(){
+
+		$('#add-category').submit(function(e){
+			e.preventDefault();
+			var input = $(this).find('input[type=text]');
+			var catName = $.trim(input.val());
+			input.val('');
+			db.insert('categories',[catName]);
+		});
+
 		$(document).on('click','#tree ul li .remove',function(){
 			var li = $(this).closest('li');
 			var cid = li.data('cid');
@@ -54,11 +64,22 @@ $(document).ready(function(){
 				li.remove();
 			}
 		});
-	}
 
-	// display output debug
-	function debugOutput(){
-
+		$(document).on('click','#tree ul li .edit',function(){
+			var el = $(this);
+			var li = el.closest('li');
+			el.text('save');
+			var cid = li.data('cid');
+			var name = li.find('.name');
+			name.attr('contenteditable',true).addClass('edited').focus();
+			name.on('blur',function(){
+				el.text('edit');
+				$(this).removeAttr('contenteditable').removeClass('edited');
+				var val = $.trim($(this).text());
+				db.update('todos',{cid:cid},{name:val});
+				name.off('blur');
+			});
+		});
 	}
 
 });

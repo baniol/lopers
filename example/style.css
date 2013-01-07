@@ -1,3 +1,7 @@
+#top-menu{
+	list-style: none;
+}
+
 #tree{
 
 }
@@ -21,4 +25,8 @@
 
 #tree ul li .remove,#tree ul li .edit{
 	cursor: pointer;
+}
+
+#tree ul li .edited{
+	border:1px solid #eee;
 }

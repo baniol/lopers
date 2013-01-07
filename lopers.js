@@ -123,8 +123,12 @@ var Lopers = function(dbName){
 		// get table structure - fields names
 		var fields = this._getTableSchema(table);
 
+		console.log(arr.length);
+
 		// check arr length against table schema
-		if(arr.length + 1 !== fields.length)
+		var schemaLength = fields.length - 1;
+		console.log(schemaLength);
+		if(arr.length != fields.length)
 			throw new Error('The number of values you trying to insert does not correspod the schema from setTable!');
 
 		for(var i in fields){
@@ -148,36 +152,27 @@ var Lopers = function(dbName){
 		this.persistTable(fn);
 	};
 
-	// revrites record with new values
-	this.editRecord = function(table,arr,key,fn){
-		arr.push(key);
-		var el = this.getItemByCid(table,key);
-		var fields = this._getTableSchema(table);
-		for(var i=0;i<=arr.length;i++){
-			el[fields[i]] = arr[i];
+	// updates a record
+	// @todo - implement multiple conditions
+	this.update = function(table,cond,fields){
+		var index = this._pickRecords(table,cond);
+		var record = this._pickRecordByIndex(table,index);
+		for(var i in record){
+			for(j in fields){
+				if(i == j){
+					record[i] = fields[j];
+				}
+			}
 		}
-		var index = this.getIndexByCid(table,key);
-		var td = this._getTableData(table);
-		td[index] = el;
-		this.persistTable(fn);
+		this.persistTable();
 	};
 
-	this.update = function(table){
-
+	// @todo - implement multiple conditions
+	this._pickRecordByIndex = function(table,index){
+		var records = this._getTableData(table);
+		return records[index];
 	};
 	
-	// Updates specific field
-	this.updateField = function(table,whereField,whereValue,targetField,newValue,fn){
-		var record = this.getRecords(table,whereField,whereValue);
-		for(var i in record){
-			var cid = record[i]['cid'];
-			var index = self.getIndexByCid(table,cid);
-			var td = this._getTableData(table);
-			td[index][targetField]= newValue;
-		}
-		this.persistTable(fn);
-	};
-
 	// delete a record
 	this.delete = function(table,cond){
 		var found = this._pickRecords(table,cond);
@@ -192,6 +187,7 @@ var Lopers = function(dbName){
 
 	// returns indexes of picked record by condition
 	// @todo - implements multiple condigions (AND)
+	// @todo maybe change name to _pickRecordIndex ?
 	this._pickRecords = function(table,cond){
 		var data = this._getTableData(table);
 		var picked = [];
@@ -209,41 +205,6 @@ var Lopers = function(dbName){
 		return picked;
 	};
 
-	// deletes related records by key
-	this.deleteRelated = function(table,whereField,whereValue,fn){
-		var rec = this.getRecords(table,whereField,whereValue);
-		for(var i in rec){
-			var cid = rec[i]['cid'];
-			var index = self.getIndexByCid(table,cid);
-			var td = this._getTableData(table);
-			td.splice(index,1);
-			this.persistTable(fn);
-		}
-	};
-	
-	// Returns first free cid for a new record
-	this.getFreeCid = function(table){
-		var tableData = this._getTableData(table);
-		var arr = [];
-		for(var i in tableData){
-			arr.push(tableData[i]['cid']);
-		}
-		if(arr.length == 0)
-			return 1;
-		else
-			return Math.max.apply(Math,arr) + 1;
-	};
-	
-	this.getIndexByCid = function(table,cid){
-		var td = this._getTableData(table);
-		var out;
-		for(var i in td){
-			if(td[i]['cid'] == cid)
-				out = i;
-		}
-		return out;
-	};
-	
 	this.persistTable = function(fn){
 		localStorage.removeItem(self._dbName);
 		localStorage.setItem(self._dbName,JSON.stringify(self._db));
@@ -305,34 +266,6 @@ var Lopers = function(dbName){
 			}
 		}
 		return out;
-	};
-	
-	/**
-	 * gets all values by the given key
-	 */
-	this._getValues = function(table,key){
-		var out = [];
-		var td = this._getTableData(table);
-		for(var i in td){
-			var obj = {};
-			obj.value = td[i][key];
-			obj.key = td[i]['cid'];
-			out.push(obj);
-		}
-		return out;
-	};
-
-	/**
-	 * Removes a record
-	 */
-	this.deleteRecord = function(table,cid,fn){
-		var index = this._getIndexByCid(table,cid);
-		var td = this._getTableData(table);
-		td.splice(index,1);
-		this.persistTable();
-		if(typeof fn == 'function'){
-			fn();
-		}
 	};
 	
 	this.resetTable = function(){
