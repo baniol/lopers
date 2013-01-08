@@ -1,4 +1,4 @@
-//     Lopers.js 0.0.3
+//     Lopers.js 0.0.4
 //     (c) 2012 Marcin Baniowski, baniowski.pl
 //     Lopers may be freely distributed under the MIT license.
 //     For all details and documentation:
@@ -7,9 +7,8 @@ var Lopers = function(dbName){
 	var self = this;
 
 	// @todo move constructor to init method (or construct ?)
-	this.version = '0.0.3';
-	this.built = "20130104";
-	this.debug = true;
+	this.version = '0.0.4';
+	this.built = "20130108";
 
 	if(dbName === undefined || dbName === ''){
 		throw new Error('db name not defined or empty string');
@@ -285,18 +284,18 @@ var Lopers = function(dbName){
 		}
 		return out;
 	};
-	
-	this.resetTable = function(){
-		this.db = [];
-		this.persistTable();
-	};
 
 	this.destroyDB = function(){
 		localStorage.removeItem(this._dbName);
 		localStorage.removeItem('lopers_cid_count');
 		delete this;
 	};
-
+	
+	// @todo = needed ?
+	this.resetTable = function(){
+		this.db = [];
+		this.persistTable();
+	};
 
 	// @todo - needed ?
 	this.deleteTable = function(){
