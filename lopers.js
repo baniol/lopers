@@ -109,7 +109,7 @@ var Lopers = function(dbName){
 			}
 		}
 		if(out === undefined){
-			this._error('Table '+ table +' not found!');
+			throw new Error('Table '+ table +' not found!');
 		}
 		return out;
 	};
@@ -118,10 +118,10 @@ var Lopers = function(dbName){
 	this.insert = function(table,arr,fn){
 		// check arguments
 		if(table === undefined){
-			this._error('Undefined table name');
+			throw new Error('Undefined table name');
 		}
 		if(arr instanceof Array == false){
-			this._error('Inserted values object argument must be of Array type');
+			throw new Error('Inserted values object argument must be of Array type');
 		}
 
 		// init empty object to insert
@@ -169,8 +169,6 @@ var Lopers = function(dbName){
 		localStorage.setItem('lopers_cid_count',newCid);
 		return newCid;
 	};
-
-
 
 	// updates a record
 	// @todo - implement multiple conditions
@@ -245,7 +243,7 @@ var Lopers = function(dbName){
 		if(out !== null){
 			return out;
 		}else{
-			this._error('object doesn`t exist');
+			throw new Error('object doesn`t exist');
 		}
 	};
 
@@ -307,9 +305,9 @@ var Lopers = function(dbName){
 	}
 	
 	/**
-	 * @todo - unused for the moment
+	 * @todo - necessary ?
 	 */
-	this.countRecords = function(table){
+	this.countTable = function(table){
 		var td = this._getTableData(table);
 		var c = 0;
 		for(var i in td){

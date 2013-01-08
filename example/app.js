@@ -1,6 +1,6 @@
 $(document).ready(function(){
 
-	var exampleData = false;
+	var exampleData = true;
 
 	// object instance with a common namespace
 	var db = new Lopers('lopers_demo');
@@ -33,10 +33,10 @@ $(document).ready(function(){
 		var html = '<div id="tree">';
 		for(var i=0;i<categories.length;i++){
 			var c = categories[i];
-			html += '<ul data-cid="'+c.cid+'">'
-			html += '<div class="cat-wrapper"><span class="cat-name">'+c.name+'</span><span class="edit">edit</span>';
-			html += '<span class="add"><input type="text" /><input type="submit" value="add todo" /></span></div>';
 			var todos = db.getRecords('todos','category',c.cid);
+			html += '<ul data-cid="'+c.cid+'">'
+			html += '<div class="cat-wrapper"><span class="cat-name">'+c.name+' ('+todos.length+')</span><span class="edit">edit</span>';
+			html += '<span class="add"><input type="text" /><input type="submit" value="add todo" /></span></div>';
 			for(var j=0;j<todos.length;j++){
 				var t = todos[j];
 				html += '<li data-cid="'+t.cid+'"><span class="name">'+t.name+'</span><span class="edit">edit</span><span class="remove">remove</span></li>';
@@ -47,6 +47,7 @@ $(document).ready(function(){
 		$('#output').html(html);
 		if(start)
 			bindEvents();
+
 	}
 
 	// bind events for tree data manipulation
@@ -67,7 +68,8 @@ $(document).ready(function(){
 			var li = $(this).closest('li');
 			var cid = li.data('cid');
 			if(db.delete('todos',{cid:cid})){
-				li.remove();
+				// li.remove();
+				displayCategoryTree();
 			}
 		});
 

@@ -26,6 +26,13 @@ describe("Insert/remove records to table", function() {
         }).toThrow('The number of values you trying to insert does not correspod the schema from setTable!');
     });
 
+    xit('additionnal', function() {
+        expect(function(){
+            lopers.setTable('tableName',['oneField','twoField','threeField']);
+            lopers.insert('tableName',['oneValue']);
+        }).toThrow('The number of values you trying to insert does not correspod the schema from setTable!');
+    });
+
     // @todo - yet to be written
     xit('after inserting a record, check if it exists.', function() {
         expect(function(){
