@@ -27,7 +27,7 @@ var Lopers = function(dbName){
 	// cid counter
 	// this._count = 1;
 
-	if(localStorage.getItem('lopers_cid_count') === undefined){
+	if(localStorage.getItem('lopers_cid_count') === null){
 		this._lastCid = 0;
 		localStorage.setItem('lopers_cid_count',this._lastCid);
 	}else{
@@ -60,13 +60,13 @@ var Lopers = function(dbName){
 			throw new Error('Fields argument must not be an empty array!');
 		}
 		// table structure
+		fields.push('cid');
 		var tableStr = {table:tableName,fields:fields};
 		this._schemas.push(tableStr);
 
 		// check if tableName exists - prevents table doubling
 		this._checkTableName(tableName,function(){
 			// add client ID
-			fields.push('cid');
 			$this._db.push({table:tableName,records:[]});
 			$this.persistTable();
 		});
@@ -129,14 +129,15 @@ var Lopers = function(dbName){
 
 		// get table structure - fields names
 		var fields = this._getTableSchema(table);
+		// console.log(fields);
 
 		// console.log(arr);
 		// console.log(fields);
-		var fieldsLength = fields.length;
-		if(fields['cid'] !== undefined){
-			fieldsLength++;
-		}
-		if(arr.length !== fieldsLength)
+		// var fieldsLength = fields.length;
+		// if(fields['cid'] !== undefined){
+		// 	fieldsLength++;
+		// }
+		if(arr.length !== fields.length - 1)
 			throw new Error('The number of values you trying to insert does not correspod the schema from setTable!');
 
 		for(var i in fields){
@@ -161,7 +162,10 @@ var Lopers = function(dbName){
 	};
 
 	this._getFirstCid = function(){
-		var newCid = this._lastCid + 1;
+		var newCid = parseInt(this._lastCid);
+		newCid++;
+		this._lastCid = newCid;
+		localStorage.removeItem('lopers_cid_count');
 		localStorage.setItem('lopers_cid_count',newCid);
 		return newCid;
 	};
@@ -288,7 +292,15 @@ var Lopers = function(dbName){
 		this.db = [];
 		this.persistTable();
 	};
-	
+
+	this.destroyDB = function(){
+		localStorage.removeItem(this._dbName);
+		localStorage.removeItem('lopers_cid_count');
+		delete this;
+	};
+
+
+	// @todo - needed ?
 	this.deleteTable = function(){
 		delete this.db;
 		this.persistTable();

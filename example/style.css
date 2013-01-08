@@ -10,6 +10,19 @@
 	list-style: none;
 }
 
+#tree ul .cat-wrapper .edit{
+	margin-left:5px;
+	cursor:pointer;
+}
+
+#tree ul .cat-wrapper .add{
+	margin-left: 5px;
+}
+
+#tree ul .cat-wrapper .add input{
+	width:100px;
+}
+
 #tree ul .cat-name{
 	text-decoration: underline;
 }
