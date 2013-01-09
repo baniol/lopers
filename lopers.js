@@ -193,13 +193,13 @@ var Lopers = function(dbName){
 	// delete a record
 	this.delete = function(table,cond){
 		var found = this._pickRecords(table,cond);
-		// @todo 2nd time called getTableData - maybe to temp cache ? - really necessary?
 		var td = this._getTableData(table);
-		for(var i in found){
-			td.splice(found[i],1);
+		if(found.length > 0){
+			td.splice(found[0],1);
+			this.delete(table,cond);
+		}else{
+			this.persistTable();
 		}
-		this.persistTable();
-		return true;
 	};
 
 	// returns indexes of picked record by condition
@@ -265,9 +265,8 @@ var Lopers = function(dbName){
 	/**
 	 * Gets all records from a table
 	 * @todo - in case of 1 element return not array (otherwise [0] needed)
-	 * @todo - rename to getSet ?
 	 */
-	this.getRecords = function(table,field,value){
+	this.getSet = function(table,field,value){
 		// get called table
 		if(table === undefined){
 			// @todo throw error - no table name

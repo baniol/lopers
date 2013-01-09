@@ -10,17 +10,18 @@
 	list-style: none;
 }
 
-#tree ul .cat-wrapper .edit{
+#tree ul .cat-wrapper .edit,#tree ul .cat-wrapper .delete{
 	margin-left:5px;
 	cursor:pointer;
 }
 
 #tree ul .cat-wrapper .add{
-	margin-left: 5px;
+	margin-left: 15px;
 }
 
-#tree ul .cat-wrapper .add input{
-	width:100px;
+#tree ul .cat-wrapper .add input[type=text]{
+	width:132px;
+	border:1px solid #aaa;
 }
 
 #tree ul .cat-name{

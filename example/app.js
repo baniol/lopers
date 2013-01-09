@@ -9,9 +9,10 @@ $(document).ready(function(){
 	//initialization of todo items table
 	db.setTable('todos',['category','name']);
 
+	var countCat = db.countTable('categories');
+
 	// add some sample data (if not exists)
-	var checkForSample = db.getOne('categories','name','sample category One');
-	if(!checkForSample && exampleData){
+	if(countCat == 0 && exampleData){
 		// insert categories
 		var catArray = ['One','Two'];
 		for(var c in catArray){
@@ -29,25 +30,36 @@ $(document).ready(function(){
 
 	// debug function for displaying stored data
 	function displayCategoryTree(start){
-		var categories = db.getRecords('categories');
+		var categories = db.getSet('categories');
 		var html = '<div id="tree">';
+
 		for(var i=0;i<categories.length;i++){
 			var c = categories[i];
-			var todos = db.getRecords('todos','category',c.cid);
+			var todos = db.getSet('todos','category',c.cid);
 			html += '<ul data-cid="'+c.cid+'">'
-			html += '<div class="cat-wrapper"><span class="cat-name">'+c.name+' ('+todos.length+')</span><span class="edit">edit</span>';
-			html += '<span class="add"><input type="text" /><input type="submit" value="add todo" /></span></div>';
+			html += '<div class="cat-wrapper">';
+			html += '<span class="cat-name">'+c.name+'</span><span> ('+todos.length+')</span><span class="edit">edit</span><span class="delete">delete</span>';
+			html += '<div class="add"><input type="text" /><input type="submit" value="add todo" /></div>';
+			html += '</div>';
 			for(var j=0;j<todos.length;j++){
 				var t = todos[j];
-				html += '<li data-cid="'+t.cid+'"><span class="name">'+t.name+'</span><span class="edit">edit</span><span class="remove">remove</span></li>';
+				html += '<li data-cid="'+t.cid+'"><span class="name">'+t.name+'</span>';
+				html += '<span class="edit">edit</span><span class="remove">remove</span></li>';
 			}
 			html += '</ul>';
 		}
+
 		html += '</div>';
 		$('#output').html(html);
 		if(start)
 			bindEvents();
 
+		show();
+	}
+
+	function show(){
+		console.log(db._getTableData('categories'));
+		console.log(db._getTableData('todos'));
 	}
 
 	// bind events for tree data manipulation
@@ -63,14 +75,44 @@ $(document).ready(function(){
 			displayCategoryTree();
 		});
 
+		// edit category
+		$(document).on('click','.cat-wrapper .edit',function(){
+			var el = $(this);
+			var ul = el.closest('ul');
+			el.text('save');
+			var cid = ul.data('cid');
+			var name = ul.find('.cat-name');
+			name.attr('contenteditable',true).addClass('edited').focus();
+			name.on('blur',function(){
+				el.text('edit');
+				$(this).removeAttr('contenteditable').removeClass('edited');
+				var val = $.trim($(this).text());
+				db.update('categories',{cid:cid},{name:val});
+				name.off('blur');
+			});
+		});
+
+		// delete category
+		$(document).on('click','.cat-wrapper .delete',function(){
+			var el = $(this);
+			var ul = el.closest('ul');
+			el.text('save');
+			var cid = ul.data('cid');
+			if(confirm('Are you sure? All items under this category will also be deleted!')){
+				// delete all related items
+				db.delete('todos',{category:cid});
+				db.delete('categories',{cid:cid});
+				displayCategoryTree();
+			}
+		});
+
 		// remove todo
 		$(document).on('click','#tree ul li .remove',function(){
 			var li = $(this).closest('li');
 			var cid = li.data('cid');
-			if(db.delete('todos',{cid:cid})){
-				// li.remove();
-				displayCategoryTree();
-			}
+			db.delete('todos',{cid:cid});
+			// li.remove();
+			displayCategoryTree();
 		});
 
 		// edit todo
@@ -86,23 +128,6 @@ $(document).ready(function(){
 				$(this).removeAttr('contenteditable').removeClass('edited');
 				var val = $.trim($(this).text());
 				db.update('todos',{cid:cid},{name:val});
-				name.off('blur');
-			});
-		});
-
-		// edit category
-		$(document).on('click','.cat-wrapper .edit',function(){
-			var el = $(this);
-			var ul = el.closest('ul');
-			el.text('save');
-			var cid = ul.data('cid');
-			var name = ul.find('.cat-name');
-			name.attr('contenteditable',true).addClass('edited').focus();
-			name.on('blur',function(){
-				el.text('edit');
-				$(this).removeAttr('contenteditable').removeClass('edited');
-				var val = $.trim($(this).text());
-				db.update('categories',{cid:cid},{name:val});
 				name.off('blur');
 			});
 		});
