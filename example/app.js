@@ -9,10 +9,11 @@ $(document).ready(function(){
 	//initialization of todo items table
 	db.setTable('todos',['category','name']);
 
-	var countCat = db.countTable('categories');
+	var countCat = db.getCount('categories');
 
 	// add some sample data (if not exists)
 	if(countCat == 0 && exampleData){
+		db.resetCounter();
 		// insert categories
 		var catArray = ['One','Two'];
 		for(var c in catArray){
@@ -35,7 +36,7 @@ $(document).ready(function(){
 
 		for(var i=0;i<categories.length;i++){
 			var c = categories[i];
-			var todos = db.getSet('todos','category',c.cid);
+			var todos = db.getSet('todos',{category:c.cid});
 			html += '<ul data-cid="'+c.cid+'">'
 			html += '<div class="cat-wrapper">';
 			html += '<span class="cat-name">'+c.name+'</span><span> ('+todos.length+')</span><span class="edit">edit</span><span class="delete">delete</span>';
@@ -54,12 +55,12 @@ $(document).ready(function(){
 		if(start)
 			bindEvents();
 
-		show();
+		// show();
 	}
 
 	function show(){
-		console.log(db._getTableData('categories'));
-		console.log(db._getTableData('todos'));
+		console.log(db.getSet('categories'));
+		console.log(db.getSet('todos'));
 	}
 
 	// bind events for tree data manipulation
@@ -70,9 +71,11 @@ $(document).ready(function(){
 			e.preventDefault();
 			var input = $(this).find('input[type=text]');
 			var catName = $.trim(input.val());
-			input.val('');
-			db.insert('categories',[catName]);
-			displayCategoryTree();
+			if(input.val() != ''){
+				db.insert('categories',[catName]);
+				displayCategoryTree();
+				input.val('');
+			}
 		});
 
 		// edit category
@@ -96,14 +99,20 @@ $(document).ready(function(){
 		$(document).on('click','.cat-wrapper .delete',function(){
 			var el = $(this);
 			var ul = el.closest('ul');
-			el.text('save');
 			var cid = ul.data('cid');
-			if(confirm('Are you sure? All items under this category will also be deleted!')){
-				// delete all related items
-				db.delete('todos',{category:cid});
+			var co = db.getCount('todos',{category:cid});
+			if(co == 0){
 				db.delete('categories',{cid:cid});
 				displayCategoryTree();
+			}else{
+				if(confirm('Are you sure? All items under this category will also be deleted!')){
+					// delete all related items
+					db.delete('todos',{category:cid});
+					db.delete('categories',{cid:cid});
+					displayCategoryTree();
+				}
 			}
+
 		});
 
 		// remove todo
@@ -138,8 +147,10 @@ $(document).ready(function(){
 			var ul = el.closest('ul');
 			var cid = ul.data('cid');
 			var val = ul.find('.add input[type=text]').val();
-			db.insert('todos',[cid,val]);
-			displayCategoryTree();
+			if(val != ''){
+				db.insert('todos',[cid,val]);
+				displayCategoryTree();
+			}
 		});
 
 		$('#clear-ls').click(function(){

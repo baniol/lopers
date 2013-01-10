@@ -3,12 +3,21 @@
 //     Lopers may be freely distributed under the MIT license.
 //     For all details and documentation:
 //     http://...
-var Lopers = function(dbName){
+var Lopers = function(dbName,options){
 	var self = this;
+
+	this.options = {
+		timestamp:true
+	};
+	if(options !== undefined && typeof options == 'object'){
+		if(options.timestamp !== undefined){
+			this.options.timestamp = options.timestamp;
+		}
+	}
 
 	// @todo move constructor to init method (or construct ?)
 	this.version = '0.0.4';
-	this.built = "20130108";
+	this.built = "20130110";
 
 	if(dbName === undefined || dbName === ''){
 		throw new Error('db name not defined or empty string');
@@ -22,9 +31,6 @@ var Lopers = function(dbName){
 
 	// object containing data tables
 	this._db;
-
-	// cid counter
-	// this._count = 1;
 
 	if(localStorage.getItem('lopers_cid_count') === null){
 		this._lastCid = 0;
@@ -47,6 +53,7 @@ var Lopers = function(dbName){
 	}
 
 	// initialize table - name and data structure
+	// @todo check for reserved names - cid, time
 	this.setTable = function(tableName,fields){
 		var $this = this;
 		if(typeof tableName !== 'string'){
@@ -60,6 +67,8 @@ var Lopers = function(dbName){
 		}
 		// table structure
 		fields.push('cid');
+		if(this.options.timestamp === true)
+			fields.push('time');
 		var tableStr = {table:tableName,fields:fields};
 		this._schemas.push(tableStr);
 
@@ -128,27 +137,21 @@ var Lopers = function(dbName){
 
 		// get table structure - fields names
 		var fields = this._getTableSchema(table);
-		// console.log(fields);
 
-		// console.log(arr);
-		// console.log(fields);
-		// var fieldsLength = fields.length;
-		// if(fields['cid'] !== undefined){
-		// 	fieldsLength++;
-		// }
-		if(arr.length !== fields.length - 1)
+		var fieldsMinus = this.options.timestamp ? 2 : 1;
+
+		if(arr.length !== fields.length - fieldsMinus)
 			throw new Error('The number of values you trying to insert does not correspod the schema from setTable!');
 
 		for(var i in fields){
 			el[fields[i]] = arr[i];
 		}
 
-		// console.log(this._count);
-
 		el['cid'] = this._getFirstCid();
-
-		// get first avaliable cid number
-		// el['cid'] = this.getFreeCid(table);
+		if(this.options.timestamp){
+			var t = new Date();
+			el['time'] = t.getTime();
+		}
 
 		// insert new record
 		for(var i in this._db){
@@ -203,10 +206,12 @@ var Lopers = function(dbName){
 	};
 
 	// returns indexes of picked record by condition
-	// @todo - implements multiple condigions (AND)
+	// @todo - implements multiple conditions (AND)
 	// @todo maybe change name to _pickRecordIndex ?
-	this._pickRecords = function(table,cond){
+	this._pickRecords = function(table,cond,whole){
 		var data = this._getTableData(table);
+		if(cond === undefined)
+			return data;
 		var picked = [];
 		for(var i=0;i<data.length;i++){
 			var el = data[i];
@@ -215,11 +220,23 @@ var Lopers = function(dbName){
 				var value = cond[j];
 				if(el[key] == value){
 					var index = this._getIndexByCid(table,el.cid);
-					picked.push(index);
+					if(whole === undefined)
+						picked.push(index);
+					else
+						picked.push(el);
 				}
 			}
 		}
 		return picked;
+	};
+
+	this.getSet = function(table,cond){
+		return this._pickRecords(table,cond,true);
+	};
+
+	this.getCount = function(table,cond){
+		var out = this._pickRecords(table,cond,true);
+		return out.length;
 	};
 
 	this.persistTable = function(fn){
@@ -246,48 +263,16 @@ var Lopers = function(dbName){
 		}
 	};
 
-	/**
-	 * Gets first field value
-	 * @todo - throw exception if field || value undefined
-	 */
-	this.getOne = function(table,field,value){
-		var tableData = this._getTableData(table);
-		var out = false;
-		for(var i in tableData){
-			if(field !== undefined && value !== undefined){ // @todo exception instead
-				if(tableData[i][field] == value)
-					out = tableData[i];
-			}
-		}
-		return out;
-	};
-	
-	/**
-	 * Gets all records from a table
-	 * @todo - in case of 1 element return not array (otherwise [0] needed)
-	 */
-	this.getSet = function(table,field,value){
-		// get called table
-		if(table === undefined){
-			// @todo throw error - no table name
-		}
-		var tableData = this._getTableData(table);
-		var out = [];
-		for(var i in tableData){
-			if(field !== undefined && value !== undefined){
-				if(tableData[i][field] == value)
-					out.push(tableData[i]);
-			}else{
-				out.push(tableData[i]);
-			}
-		}
-		return out;
-	};
-
 	this.destroyDB = function(){
 		localStorage.removeItem(this._dbName);
 		localStorage.removeItem('lopers_cid_count');
 		delete this;
+	};
+
+	// @todo - remove, only for app example
+	this.resetCounter = function(){
+		localStorage.removeItem('lopers_cid_count');
+		this._lastCid = 0;
 	};
 	
 	// @todo = needed ?
@@ -302,16 +287,4 @@ var Lopers = function(dbName){
 		this.persistTable();
 	}
 	
-	/**
-	 * @todo - necessary ?
-	 */
-	this.countTable = function(table){
-		var td = this._getTableData(table);
-		var c = 0;
-		for(var i in td){
-			c++;
-		}
-		return c;
-	};
-
 }
