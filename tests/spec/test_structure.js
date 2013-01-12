@@ -1,4 +1,4 @@
-describe("Test structure on example data", function() {
+xdescribe("Test structure on example data", function() {
 
     var db;
 
@@ -12,7 +12,7 @@ describe("Test structure on example data", function() {
         exampleData.destroyCats(db);
     });
 
-    it('some some some ...', function() {
+    xit('some some some ...', function() {
         var h = testHelpers;
         console.log(h.getCids(db));
         // expect(function(){

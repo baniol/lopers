@@ -26,6 +26,12 @@ describe("Insert/remove records to table", function() {
         }).toThrow('The number of values you trying to insert does not correspod the schema from setTable!');
     });
 
+    it('if table name is reserved, throw error', function() {
+        expect(function(){
+            lopers.setTable('table',['time']);
+        }).toThrow('Field name time is reserved!');
+    });
+
     xit('additionnal', function() {
         expect(function(){
             lopers.setTable('tableName',['oneField','twoField','threeField']);

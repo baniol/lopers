@@ -9,9 +9,11 @@ var exampleData = {
 		//initialization of todo items table
 		db.setTable('todos',['category','name']);
 
+		var countCat = db.getCount('categories');
+
 		// add some sample data (if not exists)
-		var checkForSample = db.getOne('categories','name','sample category One');
-		if(!checkForSample){
+		if(countCat == 0 && exampleData){
+			db.resetCounter();
 			// insert categories
 			var catArray = ['One','Two'];
 			for(var c in catArray){

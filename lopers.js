@@ -15,7 +15,6 @@ var Lopers = function(dbName,options){
 		}
 	}
 
-	// @todo move constructor to init method (or construct ?)
 	this.version = '0.0.4';
 	this.built = "20130110";
 
@@ -25,6 +24,9 @@ var Lopers = function(dbName,options){
 
 	// common namespace
 	this._dbName = dbName;
+
+	// reserved table names
+	this._reserved = ['cid','time'];
 
 	// array with objects with each table structure (fields)
 	this._schemas = [];
@@ -53,7 +55,6 @@ var Lopers = function(dbName,options){
 	}
 
 	// initialize table - name and data structure
-	// @todo check for reserved names - cid, time
 	this.setTable = function(tableName,fields){
 		var $this = this;
 		if(typeof tableName !== 'string'){
@@ -65,6 +66,13 @@ var Lopers = function(dbName,options){
 		if(fields.length == 0){
 			throw new Error('Fields argument must not be an empty array!');
 		}
+
+		for(var i=0;i<fields.length;i++){
+			if(this._reserved.indexOf(fields[i]) != -1){
+				throw new Error('Field name '+ fields[i] + ' is reserved!')
+			}
+		}
+		
 		// table structure
 		fields.push('cid');
 		if(this.options.timestamp === true)
@@ -95,7 +103,6 @@ var Lopers = function(dbName,options){
 
 	// Returns table data
 	this._getTableData = function(table){
-		// @todo check if table exists
 		var out;
 		for(var i in this._db){
 			if(this._db[i].table == table){
@@ -230,7 +237,7 @@ var Lopers = function(dbName,options){
 		return picked;
 	};
 
-	this.getSet = function(table,cond){
+	this.select = function(table,cond){
 		return this._pickRecords(table,cond,true);
 	};
 
@@ -269,7 +276,7 @@ var Lopers = function(dbName,options){
 		delete this;
 	};
 
-	// @todo - remove, only for app example
+	// @todo - remove, only for app example ?
 	this.resetCounter = function(){
 		localStorage.removeItem('lopers_cid_count');
 		this._lastCid = 0;

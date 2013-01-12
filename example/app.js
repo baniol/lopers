@@ -31,12 +31,12 @@ $(document).ready(function(){
 
 	// debug function for displaying stored data
 	function displayCategoryTree(start){
-		var categories = db.getSet('categories');
+		var categories = db.select('categories');
 		var html = '<div id="tree">';
 
 		for(var i=0;i<categories.length;i++){
 			var c = categories[i];
-			var todos = db.getSet('todos',{category:c.cid});
+			var todos = db.select('todos',{category:c.cid});
 			html += '<ul data-cid="'+c.cid+'">'
 			html += '<div class="cat-wrapper">';
 			html += '<span class="cat-name">'+c.name+'</span><span> ('+todos.length+')</span><span class="edit">edit</span><span class="delete">delete</span>';
@@ -59,8 +59,8 @@ $(document).ready(function(){
 	}
 
 	function show(){
-		console.log(db.getSet('categories'));
-		console.log(db.getSet('todos'));
+		console.log(db.select('categories'));
+		console.log(db.select('todos'));
 	}
 
 	// bind events for tree data manipulation
