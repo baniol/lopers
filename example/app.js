@@ -29,6 +29,11 @@ $(document).ready(function(){
 	}
 	displayCategoryTree(true);
 
+	// console.log(db.serialize(false));
+
+	// testSelect();
+	// show();
+
 	// debug function for displaying stored data
 	function displayCategoryTree(start){
 		var categories = db.select('categories');
@@ -36,7 +41,7 @@ $(document).ready(function(){
 
 		for(var i=0;i<categories.length;i++){
 			var c = categories[i];
-			var todos = db.select('todos',{category:c.cid});
+			var todos = db.select('todos',[{category:c.cid}]);
 			html += '<ul data-cid="'+c.cid+'">'
 			html += '<div class="cat-wrapper">';
 			html += '<span class="cat-name">'+c.name+'</span><span> ('+todos.length+')</span><span class="edit">edit</span><span class="delete">delete</span>';
@@ -61,6 +66,11 @@ $(document).ready(function(){
 	function show(){
 		console.log(db.select('categories'));
 		console.log(db.select('todos'));
+	}
+
+	function testSelect(){
+		var pi = db.select('todos',[{cid:2},{cid:4}]);
+		console.log(pi);
 	}
 
 	// bind events for tree data manipulation
@@ -100,15 +110,15 @@ $(document).ready(function(){
 			var el = $(this);
 			var ul = el.closest('ul');
 			var cid = ul.data('cid');
-			var co = db.getCount('todos',{category:cid});
+			var co = db.getCount('todos',[{category:cid}]);
 			if(co == 0){
-				db.delete('categories',{cid:cid});
+				db.delete('categories',[{cid:cid}]);
 				displayCategoryTree();
 			}else{
 				if(confirm('Are you sure? All items under this category will also be deleted!')){
 					// delete all related items
-					db.delete('todos',{category:cid});
-					db.delete('categories',{cid:cid});
+					db.delete('todos',[{category:cid}]);
+					db.delete('categories',[{cid:cid}]);
 					displayCategoryTree();
 				}
 			}
@@ -119,7 +129,7 @@ $(document).ready(function(){
 		$(document).on('click','#tree ul li .remove',function(){
 			var li = $(this).closest('li');
 			var cid = li.data('cid');
-			db.delete('todos',{cid:cid});
+			db.delete('todos',[{cid:cid}]);
 			// li.remove();
 			displayCategoryTree();
 		});
@@ -136,7 +146,7 @@ $(document).ready(function(){
 				el.text('edit');
 				$(this).removeAttr('contenteditable').removeClass('edited');
 				var val = $.trim($(this).text());
-				db.update('todos',{cid:cid},{name:val});
+				db.update('todos',[{cid:cid}],{name:val});
 				name.off('blur');
 			});
 		});

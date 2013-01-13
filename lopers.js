@@ -34,11 +34,11 @@ var Lopers = function(dbName,options){
 	// object containing data tables
 	this._db;
 
-	if(localStorage.getItem('lopers_cid_count') === null){
+	if(localStorage.getItem(this._dbName+'_lopers_cid_count') === null){
 		this._lastCid = 0;
-		localStorage.setItem('lopers_cid_count',this._lastCid);
+		localStorage.setItem(this._dbName+'_lopers_cid_count',this._lastCid);
 	}else{
-		this._lastCid = localStorage.getItem('lopers_cid_count');
+		this._lastCid = localStorage.getItem(this._dbName+'_lopers_cid_count');
 	}
 
 	var i = localStorage.getItem(self._dbName);
@@ -84,51 +84,14 @@ var Lopers = function(dbName,options){
 		this._checkTableName(tableName,function(){
 			// add client ID
 			$this._db.push({table:tableName,records:[]});
-			$this.persistTable();
+			$this._persistTable();
 		});
 	};
 
-	// checks for table name availability - if already exists returns false: @todo - decribe more
-	this._checkTableName = function(tableName,fn){
-		for(var i in this._db){
-			if(this._db[i].table == tableName){
-				return false;
-				// throw new Error('Table name must be unique!');
-			}
-		}
-		if(typeof fn === 'function'){
-			fn();
-		}
+	this.select = function(table,cond){
+		return this._pickRecords(table,cond,true);
 	};
 
-	// Returns table data
-	this._getTableData = function(table){
-		var out;
-		for(var i in this._db){
-			if(this._db[i].table == table){
-				out = this._db[i].records;
-			}
-		}
-		if(out === undefined){
-			throw new Error('Table '+ table +' not found!');
-		}
-		return out;
-	};
-
-	// Gets table fields (structure)
-	this._getTableSchema = function(table){
-		var out;
-		for(var i in this._schemas){
-			if(this._schemas[i].table == table){
-				out = this._schemas[i].fields;
-			}
-		}
-		if(out === undefined){
-			throw new Error('Table '+ table +' not found!');
-		}
-		return out;
-	};
-	
 	// Creates new record 
 	this.insert = function(table,arr,fn){
 		// check arguments
@@ -167,16 +130,7 @@ var Lopers = function(dbName,options){
 			}
 		}
 		// save to localStorage
-		this.persistTable(fn);
-	};
-
-	this._getFirstCid = function(){
-		var newCid = parseInt(this._lastCid);
-		newCid++;
-		this._lastCid = newCid;
-		localStorage.removeItem('lopers_cid_count');
-		localStorage.setItem('lopers_cid_count',newCid);
-		return newCid;
+		this._persistTable(fn);
 	};
 
 	// updates a record
@@ -191,15 +145,9 @@ var Lopers = function(dbName,options){
 				}
 			}
 		}
-		this.persistTable();
+		this._persistTable();
 	};
 
-	// @todo - implement multiple conditions
-	this._pickRecordByIndex = function(table,index){
-		var records = this._getTableData(table);
-		return records[index];
-	};
-	
 	// delete a record
 	this.delete = function(table,cond){
 		var found = this._pickRecords(table,cond);
@@ -208,37 +156,8 @@ var Lopers = function(dbName,options){
 			td.splice(found[0],1);
 			this.delete(table,cond);
 		}else{
-			this.persistTable();
+			this._persistTable();
 		}
-	};
-
-	// returns indexes of picked record by condition
-	// @todo - implements multiple conditions (AND)
-	// @todo maybe change name to _pickRecordIndex ?
-	this._pickRecords = function(table,cond,whole){
-		var data = this._getTableData(table);
-		if(cond === undefined)
-			return data;
-		var picked = [];
-		for(var i=0;i<data.length;i++){
-			var el = data[i];
-			for(var j in cond){
-				var key = j;
-				var value = cond[j];
-				if(el[key] == value){
-					var index = this._getIndexByCid(table,el.cid);
-					if(whole === undefined)
-						picked.push(index);
-					else
-						picked.push(el);
-				}
-			}
-		}
-		return picked;
-	};
-
-	this.select = function(table,cond){
-		return this._pickRecords(table,cond,true);
 	};
 
 	this.getCount = function(table,cond){
@@ -246,7 +165,113 @@ var Lopers = function(dbName,options){
 		return out.length;
 	};
 
-	this.persistTable = function(fn){
+	this.destroyDB = function(){
+		localStorage.removeItem(this._dbName);
+		localStorage.removeItem(this._dbName+'_lopers_cid_count');
+		delete this;
+	};
+
+	this.serialize = function(string){
+		var raw = localStorage.getItem(this._dbName);
+		var dbConf = {dbName:this._dbName,counter:this._lastCid};
+		var data = JSON.parse(raw);
+		data.push(dbConf);
+		if(string === undefined){
+			return JSON.stringify(data);
+		}else{
+			return data;
+		};
+	};
+
+	// Pseudo private methods
+
+	// checks for table name availability - if already exists returns false: @todo - decribe more
+	this._checkTableName = function(tableName,fn){
+		for(var i in this._db){
+			if(this._db[i].table == tableName){
+				return false;
+				// throw new Error('Table name must be unique!');
+			}
+		}
+		if(typeof fn === 'function'){
+			fn();
+		}
+	};
+
+	// Gets table fields (structure)
+	this._getTableSchema = function(table){
+		var out;
+		for(var i in this._schemas){
+			if(this._schemas[i].table == table){
+				out = this._schemas[i].fields;
+			}
+		}
+		if(out === undefined){
+			throw new Error('Table '+ table +' not found!');
+		}
+		return out;
+	};
+
+	// Returns table data
+	this._getTableData = function(table){
+		var out;
+		for(var i in this._db){
+			if(this._db[i].table == table){
+				out = this._db[i].records;
+			}
+		}
+		if(out === undefined){
+			throw new Error('Table '+ table +' not found!');
+		}
+		return out;
+	};
+
+	this._getFirstCid = function(){
+		var newCid = parseInt(this._lastCid);
+		newCid++;
+		this._lastCid = newCid;
+		localStorage.removeItem(this._dbName+'_lopers_cid_count');
+		localStorage.setItem(this._dbName+'_lopers_cid_count',newCid);
+		return newCid;
+	};
+
+	// @todo - implement multiple conditions
+	this._pickRecordByIndex = function(table,index){
+		var records = this._getTableData(table);
+		return records[index];
+	};
+	
+	// returns indexes of picked record by condition
+	// @todo - implements multiple conditions (AND)
+	this._pickRecords = function(table,cond,whole){
+		var data = this._getTableData(table);
+		if(cond === undefined)
+			return data;
+		var picked = [];
+		for(var i=0;i<data.length;i++){
+			var el = data[i];
+
+			// iterate through each condition
+			for(var c in cond){
+				var co = cond[c];
+				for(var j in co){
+					var key = j;
+					var value = co[j];
+					if(el[key] == value){
+						var index = this._getIndexByCid(table,el.cid);
+						if(whole === undefined)
+							picked.push(index);
+						else
+							picked.push(el);
+					}
+				}
+			}
+
+		}
+		return picked;
+	};
+
+	this._persistTable = function(fn){
 		localStorage.removeItem(self._dbName);
 		localStorage.setItem(self._dbName,JSON.stringify(self._db));
 		if(typeof fn === 'function')
@@ -270,28 +295,22 @@ var Lopers = function(dbName,options){
 		}
 	};
 
-	this.destroyDB = function(){
-		localStorage.removeItem(this._dbName);
-		localStorage.removeItem('lopers_cid_count');
-		delete this;
-	};
-
 	// @todo - remove, only for app example ?
 	this.resetCounter = function(){
-		localStorage.removeItem('lopers_cid_count');
+		localStorage.removeItem(this._dbName+'_lopers_cid_count');
 		this._lastCid = 0;
 	};
 	
 	// @todo = needed ?
 	this.resetTable = function(){
 		this.db = [];
-		this.persistTable();
+		this._persistTable();
 	};
 
 	// @todo - needed ?
 	this.deleteTable = function(){
 		delete this.db;
-		this.persistTable();
+		this._persistTable();
 	}
 	
 }
