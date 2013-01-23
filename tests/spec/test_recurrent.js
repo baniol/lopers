@@ -1,4 +1,4 @@
-describe("Test structure on example data", function() {
+xdescribe("Test structure on example data", function() {
 
     var db = new Lopers('lopers_tests_cats');
 

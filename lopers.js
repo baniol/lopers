@@ -90,6 +90,13 @@ var Lopers = function(dbName,options){
 
 	this.select = function(table,cond){
 		return this._pickRecords(table,cond,true);
+		// if one record return object, otherwise return a collection (array) of obiects
+		// var picked = this._pickRecords(table,cond,true);
+		// if(picked.length ==  1){
+		// 	return picked[0];
+		// }else{
+		// 	return picked;
+		// }
 	};
 
 	// Creates new record 
