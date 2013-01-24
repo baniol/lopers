@@ -1,4 +1,4 @@
-describe("Lopers init instance", function() {
+describe("Lopers init instance, checks for errors", function() {
     var dbName = 'test_name';
 
     afterEach(function() {

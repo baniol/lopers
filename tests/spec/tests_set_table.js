@@ -1,4 +1,4 @@
-describe("Lopers set table methods", function() {
+describe("Lopers set table methods, checks for errors", function() {
     var dbName = 'test_name',
         lopers;
 

@@ -41,7 +41,7 @@ $(document).ready(function(){
 
 		for(var i=0;i<categories.length;i++){
 			var c = categories[i];
-			var todos = db.select('todos',[{category:c.cid}]);
+			var todos = db.select('todos',{category:c.cid});
 			html += '<ul data-cid="'+c.cid+'">'
 			html += '<div class="cat-wrapper">';
 			html += '<span class="cat-name">'+c.name+'</span><span> ('+todos.length+')</span><span class="edit">edit</span><span class="delete">delete</span>';
@@ -100,7 +100,7 @@ $(document).ready(function(){
 				el.text('edit');
 				$(this).removeAttr('contenteditable').removeClass('edited');
 				var val = $.trim($(this).text());
-				db.update('categories',{cid:cid},{name:val});
+				db.update('categories',{name:val},{cid:cid});
 				name.off('blur');
 			});
 		});
@@ -110,15 +110,15 @@ $(document).ready(function(){
 			var el = $(this);
 			var ul = el.closest('ul');
 			var cid = ul.data('cid');
-			var co = db.getCount('todos',[{category:cid}]);
+			var co = db.getCount('todos',{category:cid});
 			if(co == 0){
-				db.delete('categories',[{cid:cid}]);
+				db.delete('categories',{cid:cid});
 				displayCategoryTree();
 			}else{
 				if(confirm('Are you sure? All items under this category will also be deleted!')){
 					// delete all related items
-					db.delete('todos',[{category:cid}]);
-					db.delete('categories',[{cid:cid}]);
+					db.delete('todos',{category:cid});
+					db.delete('categories',{cid:cid});
 					displayCategoryTree();
 				}
 			}
@@ -129,7 +129,7 @@ $(document).ready(function(){
 		$(document).on('click','#tree ul li .remove',function(){
 			var li = $(this).closest('li');
 			var cid = li.data('cid');
-			db.delete('todos',[{cid:cid}]);
+			db.delete('todos',{cid:cid});
 			// li.remove();
 			displayCategoryTree();
 		});
@@ -146,7 +146,7 @@ $(document).ready(function(){
 				el.text('edit');
 				$(this).removeAttr('contenteditable').removeClass('edited');
 				var val = $.trim($(this).text());
-				db.update('todos',[{cid:cid}],{name:val});
+				db.update('todos',{name:val},{cid:cid});
 				name.off('blur');
 			});
 		});

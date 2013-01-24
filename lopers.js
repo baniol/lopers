@@ -1,9 +1,10 @@
-//     Lopers.js 0.0.4
+//     Lopers.js 0.0.1
 //     (c) 2012 Marcin Baniowski, baniowski.pl
 //     Lopers may be freely distributed under the MIT license.
 //     For all details and documentation:
 //     http://...
 var Lopers = function(dbName,options){
+
 	var self = this;
 
 	this.options = {
@@ -15,8 +16,7 @@ var Lopers = function(dbName,options){
 		}
 	}
 
-	this.version = '0.0.4';
-	this.built = "20130110";
+	this.version = '0.0.1';
 
 	if(dbName === undefined || dbName === ''){
 		throw new Error('db name not defined or empty string');
@@ -90,13 +90,6 @@ var Lopers = function(dbName,options){
 
 	this.select = function(table,cond){
 		return this._pickRecords(table,cond,true);
-		// if one record return object, otherwise return a collection (array) of obiects
-		// var picked = this._pickRecords(table,cond,true);
-		// if(picked.length ==  1){
-		// 	return picked[0];
-		// }else{
-		// 	return picked;
-		// }
 	};
 
 	// Creates new record 
@@ -141,15 +134,12 @@ var Lopers = function(dbName,options){
 	};
 
 	// updates a record
-	// @todo - implement multiple conditions
-	this.update = function(table,cond,fields){
-		var index = this._pickRecords(table,cond);
-		var record = this._pickRecordByIndex(table,index);
-		for(var i in record){
-			for(j in fields){
-				if(i == j){
-					record[i] = fields[j];
-				}
+	this.update = function(table,fields,cond){
+		var found = this._pickRecords(table,cond,true);
+		for(var i=0;i<found.length;i++){
+			var el = found[i];
+			for(var key in fields){
+				el[key] = fields[key];
 			}
 		}
 		this._persistTable();
@@ -158,13 +148,13 @@ var Lopers = function(dbName,options){
 	// delete a record
 	this.delete = function(table,cond){
 		var found = this._pickRecords(table,cond);
-		var td = this._getTableData(table);
-		if(found.length > 0){
-			td.splice(found[0],1);
-			this.delete(table,cond);
-		}else{
-			this._persistTable();
+		for(var i=0;i<found.length;i++){
+			var el = found[i];
+			var index = this._getIndexByCid(table,el.cid);
+			var td = this._getTableData(table);
+			td.splice(index,1);
 		}
+		this._persistTable();
 	};
 
 	this.getCount = function(table,cond){
@@ -242,39 +232,38 @@ var Lopers = function(dbName,options){
 		return newCid;
 	};
 
-	// @todo - implement multiple conditions
 	this._pickRecordByIndex = function(table,index){
 		var records = this._getTableData(table);
 		return records[index];
 	};
 	
 	// returns indexes of picked record by condition
-	// @todo - implements multiple conditions (AND)
 	this._pickRecords = function(table,cond,whole){
 		var data = this._getTableData(table);
 		if(cond === undefined)
 			return data;
 		var picked = [];
+
+		var keys = [];
+		var values = [];
+		for(var condKey in cond){
+			keys.push(condKey);
+			values.push(cond[condKey]);
+		}
+
 		for(var i=0;i<data.length;i++){
 			var el = data[i];
-
-			// iterate through each condition
-			for(var c in cond){
-				var co = cond[c];
-				for(var j in co){
-					var key = j;
-					var value = co[j];
-					if(el[key] == value){
-						var index = this._getIndexByCid(table,el.cid);
-						if(whole === undefined)
-							picked.push(index);
-						else
-							picked.push(el);
-					}
+			var check = 1;
+			for(var j=0;j<keys.length;j++){
+				if(el[keys[j]] != values[j]){
+					check = 0;
 				}
 			}
-
+			if(check == 1){
+				picked.push(el);
+			}
 		}
+
 		return picked;
 	};
 
@@ -307,17 +296,5 @@ var Lopers = function(dbName,options){
 		localStorage.removeItem(this._dbName+'_lopers_cid_count');
 		this._lastCid = 0;
 	};
-	
-	// @todo = needed ?
-	this.resetTable = function(){
-		this.db = [];
-		this._persistTable();
-	};
-
-	// @todo - needed ?
-	this.deleteTable = function(){
-		delete this.db;
-		this._persistTable();
-	}
 	
 }

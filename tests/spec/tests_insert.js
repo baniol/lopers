@@ -1,4 +1,4 @@
-describe("Insert/remove records to table", function() {
+describe("Insert/remove records to table, checks for errors", function() {
     var dbName = 'test_name',
         lopers;
 
