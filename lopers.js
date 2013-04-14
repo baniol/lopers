@@ -88,8 +88,20 @@ var Lopers = function(dbName,options){
 		});
 	};
 
-	this.select = function(table,cond){
-		return this._pickRecords(table,cond,true);
+	this.select = function(table,cond,sortArgs){
+		var coll = this._pickRecords(table,cond,true);
+		if(sortArgs !== undefined)
+		{
+			this.sort(coll,sortArgs);
+		}
+		return coll;
+	};
+
+	this.sort = function(coll,args)
+	{
+		coll.sort(function(a, b) {
+			return args.order == 'asc' ? a[args.field] - b[args.field] : b[args.field] - a[args.field];
+		});
 	};
 
 	// Creates new record 
@@ -178,6 +190,11 @@ var Lopers = function(dbName,options){
 		}else{
 			return data;
 		};
+	};
+
+	this.lastInserted = function()
+	{
+		return this._lastCid;
 	};
 
 	// Pseudo private methods
