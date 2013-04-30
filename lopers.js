@@ -296,7 +296,7 @@ var Lopers = function(dbName,options){
 	 */
 	this._getIndexByCid = function(table,cid){
 		var out = null,
-			d = this._getTableData(table);
+			td = this._getTableData(table);
 
 		for(var i in td){
 			if(td[i]['cid'] == cid)
