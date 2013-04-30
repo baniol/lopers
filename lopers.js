@@ -1,4 +1,4 @@
-//     Lopers.js 0.0.1
+//     Lopers.js 0.0.2
 //     (c) 2012 Marcin Baniowski, baniowski.pl
 //     Lopers may be freely distributed under the MIT license.
 //     For all details and documentation:
@@ -295,8 +295,9 @@ var Lopers = function(dbName,options){
 	 * Returns collection key by client id
 	 */
 	this._getIndexByCid = function(table,cid){
-		var out = null;
-		var td = this._getTableData(table);
+		var out = null,
+			d = this._getTableData(table);
+
 		for(var i in td){
 			if(td[i]['cid'] == cid)
 				out = i;
@@ -306,6 +307,26 @@ var Lopers = function(dbName,options){
 		}else{
 			throw new Error('object doesn`t exist');
 		}
+	};
+
+	/**
+	 * Adds field to table schema
+	 * @param {String} table table name
+	 * @param {String} field name of the new field
+	 * @param {Mixed} value default field value
+	 */
+	this.newField = function(table,field,value){
+		var td = this._getTableData(table),
+			out = [];
+		for(var i in td){
+			var obj = td[i];
+			if(obj[field] === undefined)
+			{
+				obj[field] = value;
+			}
+			out.push(obj);
+		}
+		this._persistTable();
 	};
 
 	// @todo - remove, only for app example ?
