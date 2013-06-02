@@ -1,7 +1,5 @@
 ## A Small Javascript Library for Local Storage Persistence
 ---
-Lopers.js is a small javascript library for web application using local storage for client-side data persistence. The library uses a more database-like approach, providing a common namespace for multiple tables (nested associative arrays) where you can store data in JSON format.
----
 
 ### Initialization
 
@@ -30,6 +28,15 @@ Lopers supports selecting with multiple conditions. Getting all items belonging 
 
 ```javascript
 db.select('todos',{category:2,done:1});
+```
+
+You can sort the retrieved data by passing the third argument with a sorting field number and sort direction (asc|desc):
+
+```javascript
+var cats = this.db.select('categories', {}, {
+	field: 'order',
+	order: 'asc'
+});
 ```
 
 ### Inserting records
@@ -66,7 +73,7 @@ The update methods takes 3 arguments: table name, fields to update and update co
 ```javascript
 // update name to `edited` for a record with cliend id = 3
 db.update('categories',{name:'edited'},{cid:3});
-``
+```
 
 Setting all items belonging to category 2 to done would involve:
 
