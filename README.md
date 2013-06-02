@@ -101,3 +101,7 @@ db.getCount('todos',{category:2});
 // dumping db structure. This method takes an argument, if true the output is a string, otherwise it's an object
 db.dump(true);
 ```
+
+## Example in a model of a working applicaton
+
+[https://github.com/baniol/mobile-list/blob/master/js/models/mainModel.js](https://github.com/baniol/mobile-list/blob/master/js/models/mainModel.js)
